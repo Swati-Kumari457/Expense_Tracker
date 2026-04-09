@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expense Manager - Login</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .container {
+            background: white;
+            width: 400px;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            animation: slideUp 0.5s ease;
+        }
+        
+        @keyframes slideUp {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        h2 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+        
+        .input-group {
+            margin-bottom: 20px;
+        }
+        
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 500;
+        }
+        
+        .input-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+        
+        .input-group input:focus {
+            border-color: #667eea;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        button {
+            width: 100%;
+            padding: 14px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        .links {
+            text-align: center;
+            margin-top: 20px;
+        }
+        
+        .links a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .links a:hover {
+            text-decoration: underline;
+        }
+        
+        .error-message {
+            color: #e53e3e;
+            font-size: 14px;
+            margin-top: 5px;
+            display: none;
+        }
+        
+        .feature-badge {
+            background: #f3f4f6;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            color: #4a5568;
+            display: inline-block;
+            margin: 5px;
+        }
+        
+        .features {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e0e0e0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>💰 Expense Manager</h2>
+        <div class="subtitle">with Predictive Insights</div>
+        
+        <form id="loginForm" onsubmit="handleLogin(event)">
+            <div class="input-group">
+                <label>Email</label>
+                <input type="email" id="email" placeholder="Enter your email" required>
+            </div>
+            
+            <div class="input-group">
+                <label>Password</label>
+                <input type="password" id="password" placeholder="Enter your password" required>
+            </div>
+            
+            <button type="submit">Login</button>
+        </form>
+        
+        <div class="links">
+            Don't have an account? <a href="register.html">Register here</a>
+        </div>
+        
+        <div class="features">
+            <span class="feature-badge">📊 Smart Analytics</span>
+            <span class="feature-badge">🤖 AI Predictions</span>
+            <span class="feature-badge">📈 Visual Reports</span>
+            <span class="feature-badge">🎯 Budget Alerts</span>
+        </div>
+    </div>
+
+    <script>
+        function handleLogin(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            // Get users from localStorage
+            const users = JSON.parse(localStorage.getItem('users')) || [];
+            const user = users.find(u => u.email === email && u.password === password);
+            
+            if(user) {
+                // Store current user
+                localStorage.setItem('currentUser', JSON.stringify({
+                    id: user.id,
+                    name: user.name,
+                    email: user.email
+                }));
+                
+                window.location.href = 'dashboard.html';
+            } else {
+                alert('Invalid email or password!');
+            }
+        }
+    </script>
+</body>
+</html>
