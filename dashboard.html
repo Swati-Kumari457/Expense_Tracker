@@ -1,0 +1,936 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Expense Manager</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: #f0f2f5;
+        }
+        
+        /* Navbar */
+        .navbar {
+            background: white;
+            padding: 15px 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 30px;
+        }
+        
+        .nav-links a {
+            text-decoration: none;
+            color: #4a5568;
+            font-weight: 500;
+            padding: 8px 16px;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+        
+        .nav-links a:hover, .nav-links a.active {
+            background: #667eea;
+            color: white;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .user-name {
+            font-weight: 500;
+            color: #2d3748;
+        }
+        
+        .logout-btn {
+            background: #f56565;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background 0.3s;
+        }
+        
+        .logout-btn:hover {
+            background: #e53e3e;
+        }
+        
+        /* Main Container */
+        .container {
+            max-width: 1400px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+        
+        /* Welcome Section */
+        .welcome-section {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 40px;
+            border-radius: 20px;
+            color: white;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+        }
+        
+        .welcome-section h1 {
+            font-size: 32px;
+            margin-bottom: 10px;
+        }
+        
+        .date-badge {
+            background: rgba(255,255,255,0.2);
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 14px;
+        }
+        
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 25px;
+            border-radius: 20px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+            transition: transform 0.3s, box-shadow 0.3s;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 5px;
+        }
+        
+        .stat-card.income::before { background: #48bb78; }
+        .stat-card.expense::before { background: #f56565; }
+        .stat-card.balance::before { background: #667eea; }
+        .stat-card.savings::before { background: #ed8936; }
+        
+        .stat-title {
+            color: #718096;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+        }
+        
+        .stat-amount {
+            font-size: 36px;
+            font-weight: bold;
+            color: #2d3748;
+            margin-bottom: 10px;
+        }
+        
+        .stat-change {
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .change-positive { color: #48bb78; }
+        .change-negative { color: #f56565; }
+        
+        /* Add Transaction Form */
+        .add-transaction {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+            margin-bottom: 30px;
+        }
+        
+        .section-title {
+            font-size: 20px;
+            color: #2d3748;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .form-group label {
+            font-size: 14px;
+            color: #4a5568;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+        
+        .form-group input, .form-group select {
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 15px;
+            transition: all 0.3s;
+        }
+        
+        .form-group input:focus, .form-group select:focus {
+            border-color: #667eea;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .btn-primary {
+            background: #1E3A8A;;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 25px;
+        }
+        
+        .btn-primary:hover {
+            background:  #1E40AF;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        
+        /* Charts Grid */
+        .charts-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+        
+        .chart-card {
+            background: white;
+            padding: 25px;
+            border-radius: 20px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+        }
+        
+        .chart-card h3 {
+            color: #4a5568;
+            margin-bottom: 20px;
+            font-size: 18px;
+        }
+        
+        canvas {
+            max-height: 300px;
+            width: 100% !important;
+        }
+        
+        /* Recent Transactions */
+        .recent-transactions {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+        }
+        
+        .table-container {
+            overflow-x: auto;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        th {
+            background: #f7fafc;
+            padding: 15px;
+            text-align: left;
+            color: #4a5568;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        td {
+            padding: 15px;
+            border-bottom: 1px solid #e2e8f0;
+            color: #2d3748;
+        }
+        
+        .transaction-income {
+            color: #48bb78;
+            font-weight: 600;
+        }
+        
+        .transaction-expense {
+            color: #f56565;
+            font-weight: 600;
+        }
+        
+        .badge {
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        
+        .badge-income {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+        
+        .badge-expense {
+            background: #fed7d7;
+            color: #742a2a;
+        }
+        
+        .delete-btn {
+            background: #f56565;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 12px;
+            transition: background 0.3s;
+        }
+        
+        .delete-btn:hover {
+            background: #e53e3e;
+        }
+        
+        /* Loading Spinner */
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 50px;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <div class="navbar">
+        <div class="logo">💰 Expense Manager</div>
+        <div class="nav-links">
+            <a href="dashboard.html" class="active">Dashboard</a>
+            <a href="predict.html">AI Insights</a>
+            <a href="reports.html">Reports</a>
+        </div>
+        <div class="user-info">
+            <span class="user-name" id="userName">Welcome, User</span>
+            <button class="logout-btn" onclick="logout()">Logout</button>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="container">
+        <!-- Welcome Section -->
+        <div class="welcome-section">
+            <h1 id="welcomeMessage">Good evening, User! 👋</h1>
+            <p>Here's your financial summary for today</p>
+            <div class="date-badge" id="currentDate"></div>
+        </div>
+
+        <!-- Stats Grid -->
+        <div class="stats-grid">
+            <div class="stat-card income">
+                <div class="stat-title">Total Income</div>
+                <div class="stat-amount" id="totalIncome">₹0</div>
+                <div class="stat-change">
+                    <span class="change-positive">↑ 12%</span>
+                    <span>vs last month</span>
+                </div>
+            </div>
+            
+            <div class="stat-card expense">
+                <div class="stat-title">Total Expenses</div>
+                <div class="stat-amount" id="totalExpense">₹0</div>
+                <div class="stat-change">
+                    <span class="change-negative">↓ 8%</span>
+                    <span>vs last month</span>
+                </div>
+            </div>
+            
+            <div class="stat-card balance">
+                <div class="stat-title">Current Balance</div>
+                <div class="stat-amount" id="balance">₹0</div>
+                <div class="stat-change">
+                    <span>Healthy</span>
+                </div>
+            </div>
+            
+            <div class="stat-card savings">
+                <div class="stat-title">Savings Rate</div>
+                <div class="stat-amount" id="savingsRate">0%</div>
+                <div class="stat-change">
+                    <span class="change-positive">Target: 30%</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Transaction Form -->
+        <div class="add-transaction">
+            <div class="section-title">
+                <span>➕</span> Add New Transaction
+            </div>
+            
+            <div class="form-grid">
+                <div class="form-group">
+                    <label>Description</label>
+                    <input type="text" id="description" placeholder="e.g., Salary, Groceries" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Amount (₹)</label>
+                    <input type="number" id="amount" placeholder="0.00" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Category</label>
+                    <select id="category">
+                        <option value="Salary">Salary</option>
+                        <option value="Food">Food</option>
+                        <option value="Travel">Travel</option>
+                        <option value="Entertainment">Entertainment</option>
+                        <option value="Bills">Bills</option>
+                        <option value="Shopping">Shopping</option>
+                        <option value="Health">Health</option>
+                        <option value="Education">Education</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Date</label>
+                    <input type="date" id="date" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Type</label>
+                    <select id="type">
+                        <option value="income">Income</option>
+                        <option value="expense">Expense</option>
+                    </select>
+                </div>
+            </div>
+            
+            <button class="btn-primary" onclick="addTransaction()">Add Transaction</button>
+        </div>
+
+        <!-- Charts Grid -->
+        <div class="charts-grid">
+            <div class="chart-card">
+                <h3>📊 Expense Breakdown</h3>
+                <canvas id="pieChart"></canvas>
+            </div>
+            
+            <div class="chart-card">
+                <h3>📈 Monthly Trend</h3>
+                <canvas id="barChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Recent Transactions -->
+        <div class="recent-transactions">
+            <div class="section-title">
+                <span>📋</span> Recent Transactions
+            </div>
+            
+            <div class="table-container">
+                <table id="transactionTable">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Description</th>
+                            <th>Category</th>
+                            <th>Type</th>
+                            <th>Amount</th>
+                            <th>Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="transactionBody">
+                        <!-- Transactions will be inserted here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Spinner -->
+    <div class="loading" id="loading">
+        <div class="spinner"></div>
+        <p>Loading your financial data...</p>
+    </div>
+
+    <script>
+        // Global variables
+        let transactions = [];
+        let pieChart, barChart;
+        let categories = [
+            'Salary', 'Food', 'Travel', 'Entertainment', 
+            'Bills', 'Shopping', 'Health', 'Education', 'Other'
+        ];
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check if user is logged in
+            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            if(!currentUser) {
+                window.location.href = 'index.html';
+                return;
+            }
+            
+            // Update UI with user info
+            document.getElementById('userName').textContent = `Welcome, ${currentUser.name}`;
+            document.getElementById('welcomeMessage').textContent = getGreeting() + ', ' + currentUser.name + '! 👋';
+            
+            // Set current date
+            const today = new Date();
+            document.getElementById('currentDate').textContent = today.toLocaleDateString('en-US', { 
+                weekday: 'long', 
+                year: 'numeric', 
+                month: 'long', 
+                day: 'numeric' 
+            });
+            
+            // Set default date in form
+            document.getElementById('date').valueAsDate = new Date();
+            
+            // Load transactions
+            loadTransactions();
+        });
+
+        // Get greeting based on time
+        function getGreeting() {
+            const hour = new Date().getHours();
+            if(hour < 12) return 'Good morning';
+            if(hour < 17) return 'Good afternoon';
+            return 'Good evening';
+        }
+
+        // Load transactions from localStorage
+        function loadTransactions() {
+            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            const allTransactions = JSON.parse(localStorage.getItem('transactions')) || [];
+            
+            // Filter transactions for current user
+            transactions = allTransactions.filter(t => t.userId === currentUser.id);
+            
+            // If no transactions, add sample data
+            if(transactions.length === 0) {
+                addSampleData();
+            } else {
+                updateDisplay();
+            }
+        }
+
+        // Add sample data for new users
+        function addSampleData() {
+            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            const sampleTransactions = [
+                {
+                    id: Date.now() - 5,
+                    userId: currentUser.id,
+                    date: getDate(-30),
+                    description: 'Monthly Salary',
+                    category: 'Salary',
+                    type: 'income',
+                    amount: 50000
+                },
+                {
+                    id: Date.now() - 4,
+                    userId: currentUser.id,
+                    date: getDate(-5),
+                    description: 'Grocery Shopping',
+                    category: 'Food',
+                    type: 'expense',
+                    amount: 2500
+                },
+                {
+                    id: Date.now() - 3,
+                    userId: currentUser.id,
+                    date: getDate(-10),
+                    description: 'Movie Night',
+                    category: 'Entertainment',
+                    type: 'expense',
+                    amount: 800
+                },
+                {
+                    id: Date.now() - 2,
+                    userId: currentUser.id,
+                    date: getDate(-15),
+                    description: 'Electricity Bill',
+                    category: 'Bills',
+                    type: 'expense',
+                    amount: 1800
+                },
+                {
+                    id: Date.now() - 1,
+                    userId: currentUser.id,
+                    date: getDate(-20),
+                    description: 'Bus Pass',
+                    category: 'Travel',
+                    type: 'expense',
+                    amount: 500
+                }
+            ];
+            
+            transactions = sampleTransactions;
+            saveTransactions();
+            updateDisplay();
+        }
+
+        // Helper function to get date
+        function getDate(daysAgo) {
+            const date = new Date();
+            date.setDate(date.getDate() + daysAgo);
+            return date.toISOString().split('T')[0];
+        }
+
+        // Save transactions to localStorage
+        function saveTransactions() {
+            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            const allTransactions = JSON.parse(localStorage.getItem('transactions')) || [];
+            
+            // Remove old transactions for this user
+            const otherTransactions = allTransactions.filter(t => t.userId !== currentUser.id);
+            
+            // Add current transactions
+            const updatedTransactions = [...otherTransactions, ...transactions];
+            
+            localStorage.setItem('transactions', JSON.stringify(updatedTransactions));
+        }
+
+        // Add new transaction
+        function addTransaction() {
+            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            
+            const description = document.getElementById('description').value;
+            const amount = parseFloat(document.getElementById('amount').value);
+            const category = document.getElementById('category').value;
+            const date = document.getElementById('date').value;
+            const type = document.getElementById('type').value;
+            
+            // Validation
+            if(!description || !amount || !date) {
+                alert('Please fill all fields!');
+                return;
+            }
+            
+            if(amount <= 0) {
+                alert('Amount must be greater than 0!');
+                return;
+            }
+            
+            // Create transaction
+            const transaction = {
+                id: Date.now(),
+                userId: currentUser.id,
+                date: date,
+                description: description,
+                category: category,
+                type: type,
+                amount: amount
+            };
+            
+            transactions.push(transaction);
+            saveTransactions();
+            updateDisplay();
+            
+            // Clear form
+            document.getElementById('description').value = '';
+            document.getElementById('amount').value = '';
+            
+            // Show success message
+            showNotification('Transaction added successfully!', 'success');
+        }
+
+        // Delete transaction
+        function deleteTransaction(id) {
+            if(confirm('Are you sure you want to delete this transaction?')) {
+                transactions = transactions.filter(t => t.id !== id);
+                saveTransactions();
+                updateDisplay();
+                showNotification('Transaction deleted!', 'info');
+            }
+        }
+
+        // Show notification
+        function showNotification(message, type) {
+            // Simple alert for now
+            alert(message);
+        }
+
+        // Update all displays
+        function updateDisplay() {
+            updateStats();
+            updateTable();
+            updateCharts();
+            updatePredictions(); // For AI insights
+        }
+
+        // Update statistics
+        function updateStats() {
+            let totalIncome = 0, totalExpense = 0;
+            let monthlyIncome = 0, monthlyExpense = 0;
+            
+            const currentMonth = new Date().getMonth();
+            const currentYear = new Date().getFullYear();
+            
+            transactions.forEach(t => {
+                const transactionDate = new Date(t.date);
+                
+                // Total calculations
+                if(t.type === 'income') {
+                    totalIncome += t.amount;
+                } else {
+                    totalExpense += t.amount;
+                }
+                
+                // Monthly calculations
+                if(transactionDate.getMonth() === currentMonth && 
+                   transactionDate.getFullYear() === currentYear) {
+                    if(t.type === 'income') {
+                        monthlyIncome += t.amount;
+                    } else {
+                        monthlyExpense += t.amount;
+                    }
+                }
+            });
+            
+            const balance = totalIncome - totalExpense;
+            const savingsRate = totalIncome > 0 ? ((totalIncome - totalExpense) / totalIncome * 100).toFixed(1) : 0;
+            
+            document.getElementById('totalIncome').textContent = '₹' + totalIncome.toFixed(2);
+            document.getElementById('totalExpense').textContent = '₹' + totalExpense.toFixed(2);
+            document.getElementById('balance').textContent = '₹' + balance.toFixed(2);
+            document.getElementById('savingsRate').textContent = savingsRate + '%';
+        }
+
+        // Update transaction table
+        function updateTable() {
+            const tbody = document.getElementById('transactionBody');
+            
+            // Sort by date (newest first)
+            const sorted = [...transactions].sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            if(sorted.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6" style="text-align: center; padding: 30px;">
+                            No transactions yet. Add your first transaction above!
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+            
+            tbody.innerHTML = sorted.map(t => `
+                <tr>
+                    <td>${formatDate(t.date)}</td>
+                    <td>${t.description}</td>
+                    <td><span class="badge ${getCategoryColor(t.category)}">${t.category}</span></td>
+                    <td><span class="badge ${t.type === 'income' ? 'badge-income' : 'badge-expense'}">${t.type}</span></td>
+                    <td class="${t.type === 'income' ? 'transaction-income' : 'transaction-expense'}">
+                        ${t.type === 'income' ? '+' : '-'}₹${t.amount.toFixed(2)}
+                    </td>
+                    <td>
+                        <button class="delete-btn" onclick="deleteTransaction(${t.id})">Delete</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Format date
+        function formatDate(dateString) {
+            const options = { year: 'numeric', month: 'short', day: 'numeric' };
+            return new Date(dateString).toLocaleDateString('en-US', options);
+        }
+
+        // Get category color
+        function getCategoryColor(category) {
+            const colors = {
+                'Salary': 'badge-income',
+                'Food': 'badge-expense',
+                'Travel': 'badge-expense',
+                'Entertainment': 'badge-expense',
+                'Bills': 'badge-expense',
+                'Shopping': 'badge-expense',
+                'Health': 'badge-expense',
+                'Education': 'badge-income',
+                'Other': 'badge-expense'
+            };
+            return colors[category] || 'badge-expense';
+        }
+
+        // Update charts
+        function updateCharts() {
+            // Expense by category (Pie Chart)
+            const expenseByCategory = {};
+            transactions.filter(t => t.type === 'expense').forEach(t => {
+                expenseByCategory[t.category] = (expenseByCategory[t.category] || 0) + t.amount;
+            });
+            
+            if(pieChart) pieChart.destroy();
+            const ctxPie = document.getElementById('pieChart').getContext('2d');
+            pieChart = new Chart(ctxPie, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(expenseByCategory),
+                    datasets: [{
+                        data: Object.values(expenseByCategory),
+                        backgroundColor: [
+                            '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', 
+                            '#9966FF', '#FF9F40', '#FF6384', '#C9CBCF'
+                        ]
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    }
+                }
+            });
+            
+            // Monthly trend (Bar Chart)
+            const monthlyData = {};
+            transactions.forEach(t => {
+                const month = t.date.substring(0, 7); // YYYY-MM format
+                if(!monthlyData[month]) {
+                    monthlyData[month] = { income: 0, expense: 0 };
+                }
+                monthlyData[month][t.type] += t.amount;
+            });
+            
+            const months = Object.keys(monthlyData).sort().slice(-6);
+            const incomeData = months.map(m => monthlyData[m].income);
+            const expenseData = months.map(m => monthlyData[m].expense);
+            
+            if(barChart) barChart.destroy();
+            const ctxBar = document.getElementById('barChart').getContext('2d');
+            barChart = new Chart(ctxBar, {
+                type: 'bar',
+                data: {
+                    labels: months.map(m => {
+                        const [year, month] = m.split('-');
+                        return `${month}/${year}`;
+                    }),
+                    datasets: [
+                        {
+                            label: 'Income',
+                            data: incomeData,
+                            backgroundColor: '#48BB78',
+                            borderRadius: 5
+                        },
+                        {
+                            label: 'Expense',
+                            data: expenseData,
+                            backgroundColor: '#F56565',
+                            borderRadius: 5
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return '₹' + value;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Update predictions (for AI insights)
+        function updatePredictions() {
+            // Store prediction data for predict.html
+            const predictionData = {
+                transactions: transactions,
+                lastUpdated: new Date().toISOString()
+            };
+            localStorage.setItem('predictionData', JSON.stringify(predictionData));
+        }
+
+        // Logout function
+        function logout() {
+            localStorage.removeItem('currentUser');
+            window.location.href = 'index.html';
+        }
+    </script>
+</body>
+</html>
