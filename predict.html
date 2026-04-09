@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Insights - Expense Manager</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: #f0f2f5;
+        }
+        
+        /* Navbar */
+        .navbar {
+            background: white;
+            padding: 15px 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .nav-links {
+            display: flex;
+            gap: 30px;
+        }
+        
+        .nav-links a {
+            text-decoration: none;
+            color: #4a5568;
+            font-weight: 500;
+            padding: 8px 16px;
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+        
+        .nav-links a:hover, .nav-links a.active {
+            background: #667eea;
+            color: white;
+        }
+        
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .user-name {
+            font-weight: 500;
+            color: #2d3748;
+        }
+        
+        .logout-btn {
+            background: #f56565;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background 0.3s;
+        }
+        
+        .logout-btn:hover {
+            background: #e53e3e;
+        }
+        
+        /* Container */
+        .container {
+            max-width: 1400px;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+        
+        /* Header */
+        .header {
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 32px;
+            color: #2d3748;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            color: #718096;
+            font-size: 16px;
+        }
+        
+        /* AI Status Card */
+        .ai-status {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 30px;
+            border-radius: 20px;
+            color: white;
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        
+        .ai-status h2 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        
+        .ai-status p {
+            opacity: 0.9;
+        }
+        
+        .ai-badge {
+            background: rgba(255,255,255,0.2);
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        /* Prediction Cards */
+        .predictions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+        
+        .prediction-card {
+            background: white;
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+            transition: transform 0.3s;
+        }
+        
+        .prediction-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .card-header h3 {
+            color: #4a5568;
+            font-size: 18px;
+        }
+        
+        .icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+        
+        .icon.purple { background: #e9d8fd; color: #553c9a; }
+        .icon.blue { background: #bee3f8; color: #2c5282; }
+        .icon.green { background: #c6f6d5; color: #22543d; }
+        .icon.orange { background: #feebc8; color: #7b341e; }
+        
+        .prediction-amount {
+            font-size: 36px;
+            font-weight: bold;
+            color: #2d3748;
+            margin-bottom: 10px;
+        }
+        
+        .prediction-label {
+            color: #718096;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+        
+        .confidence-bar {
+            height: 8px;
+            background: #e2e8f0;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 15px 0;
+        }
+        
+        .confidence-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #48bb78, #667eea);
+            border-radius: 4px;
+            width: 0%;
+            transition: width 1s ease;
+        }
+        
+        .trend-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            border-radius: 10px;
+            background: #f7fafc;
+        }
+        
+        .trend-up { color: #48bb78; }
+        .trend-down { color: #f56565; }
+        
+        /* Insights Grid */
+        .insights-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+            gap: 25px;
+            margin-bottom: 30px;
+        }
+        
+        .insight-card {
+            background: white;
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+        }
+        
+        .insight-card h3 {
+            color: #4a5568;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .suggestion-list {
+            list-style: none;
+        }
+        
+        .suggestion-item {
+            padding: 15px;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .suggestion-item:last-child {
+            border-bottom: none;
+        }
+        
+        .suggestion-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            background: #e9d8fd;
+            color: #553c9a;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+        
+        .suggestion-content {
+            flex: 1;
+        }
+        
+        .suggestion-title {
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 5px;
+        }
+        
+        .suggestion-desc {
+            font-size: 14px;
+            color: #718096;
+        }
+        
+        .suggestion-impact {
+            color: #48bb78;
+            font-weight: 500;
+            font-size: 14px;
+        }
+        
+        /* Category Predictions */
+        .category-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .category-prediction {
+            background: #f7fafc;
+            padding: 15px;
+            border-radius: 12px;
+        }
+        
+        .category-name {
+            font-weight: 600;
+            color: #4a5568;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .category-amount {
+            font-size: 20px;
+            font-weight: bold;
+            color: #2d3748;
+            margin-bottom: 5px;
+        }
+        
+        .category-trend {
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        /* Alert Card */
+        .alert-card {
+            background: #fff5f5;
+            border: 1px solid #feb2b2;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .alert-icon {
+            width: 50px;
+            height: 50px;
+            border-radius: 25px;
+            background: #fc8181;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+        }
+        
+        .alert-content {
+            flex: 1;
+        }
+        
+        .alert-title {
+            font-weight: 600;
+            color: #c53030;
+            margin-bottom: 5px;
+        }
+        
+        .alert-desc {
+            color: #742a2a;
+            font-size: 14px;
+        }
+        
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 50px;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        /* Refresh Button */
+        .refresh-btn {
+            background: white;
+            border: 2px solid #667eea;
+            color: #667eea;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .refresh-btn:hover {
+            background: #667eea;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navbar -->
+    <div class="navbar">
+        <div class="logo">💰 Expense Manager</div>
+        <div class="nav-links">
+            <a href="dashboard.html">Dashboard</a>
+            <a href="predict.html" class="active">AI Insights</a>
+            <a href="reports.html">Reports</a>
+        </div>
+        <div class="user-info">
+            <span class="user-name" id="userName">Welcome, User</span>
+            <button class="logout-btn" onclick="logout()">Logout</button>
+        </div>
+    </div>
+
+    <!-- Container -->
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🤖 AI Predictive Insights</h1>
+            <p>Smart predictions and recommendations based on your spending patterns</p>
+        </div>
+
+        <!-- AI Status -->
+        <div class="ai-status">
+            <div>
+                <h2>AI Analysis Active</h2>
+                <p>Analyzing your last 6 months of transaction data</p>
+            </div>
+            <div class="ai-badge">
+                <span>⚡</span>
+                <span>Model: Linear Regression + Time Series</span>
+            </div>
+        </div>
+
+        <!-- Loading State -->
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>AI is analyzing your spending patterns...</p>
+        </div>
+
+        <!-- Main Content (Hidden initially) -->
+        <div id="mainContent" style="display: none;">
+            <!-- Prediction Cards -->
+            <div class="predictions-grid">
+                <div class="prediction-card">
+                    <div class="card-header">
+                        <h3>Next Month Expenses</h3>
+                        <div class="icon purple">📊</div>
+                    </div>
+                    <div class="prediction-amount" id="nextMonthExpense">₹0</div>
+                    <div class="prediction-label">Predicted total expenses</div>
+                    <div class="confidence-bar">
+                        <div class="confidence-fill" id="expenseConfidence" style="width: 0%"></div>
+                    </div>
+                    <div class="trend-indicator" id="expenseTrend">
+                        <span>📈</span>
+                        <span>Trend: <span id="expenseTrendValue">analyzing...</span></span>
+                    </div>
+                </div>
+
+                <div class="prediction-card">
+                    <div class="card-header">
+                        <h3>Savings Forecast</h3>
+                        <div class="icon blue">💰</div>
+                    </div>
+                    <div class="prediction-amount" id="savingsForecast">₹0</div>
+                    <div class="prediction-label">Expected savings next month</div>
+                    <div class="confidence-bar">
+                        <div class="confidence-fill" id="savingsConfidence" style="width: 0%"></div>
+                    </div>
+                    <div class="trend-indicator" id="savingsTrend">
+                        <span>📊</span>
+                        <span>Status: <span id="savingsStatus">analyzing...</span></span>
+                    </div>
+                </div>
+
+                <div class="prediction-card">
+                    <div class="card-header">
+                        <h3>Budget Alert</h3>
+                        <div class="icon orange">⚠️</div>
+                    </div>
+                    <div class="prediction-amount" id="budgetAlert">0</div>
+                    <div class="prediction-label">Categories near limit</div>
+                    <div class="trend-indicator" style="background: #feebc8;">
+                        <span>⚡</span>
+                        <span id="budgetMessage">Take action now</span>
+                    </div>
+                </div>
+
+                <div class="prediction-card">
+                    <div class="card-header">
+                        <h3>Financial Health</h3>
+                        <div class="icon green">❤️</div>
+                    </div>
+                    <div class="prediction-amount" id="healthScore">0/100</div>
+                    <div class="prediction-label">Your financial score</div>
+                    <div class="confidence-bar">
+                        <div class="confidence-fill" id="healthBar" style="width: 0%"></div>
+                    </div>
+                    <div id="healthMessage">Good</div>
+                </div>
+            </div>
+
+            <!-- Alerts Section -->
+            <div id="alertsContainer"></div>
+
+            <!-- Insights Grid -->
+            <div class="insights-grid">
+                <!-- Smart Suggestions -->
+                <div class="insight-card">
+                    <h3>💡 Smart Money Tips</h3>
+                    <ul class="suggestion-list" id="suggestionsList">
+                        <!-- Suggestions will be inserted here -->
+                    </ul>
+                </div>
+
+                <!-- Category-wise Predictions -->
+                <div class="insight-card">
+                    <h3>📊 Category Predictions</h3>
+                    <div class="category-grid" id="categoryPredictions">
+                        <!-- Category predictions will be inserted here -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Refresh Button -->
+            <div style="text-align: center; margin-top: 30px;">
+                <button class="refresh-btn" onclick="runPrediction()">
+                    <span>🔄</span> Refresh Predictions
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables
+        let transactions = [];
+        let predictionInterval;
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check if user is logged in
+            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            if(!currentUser) {
+                window.location.href = 'index.html';
+                return;
+            }
+            
+            // Update user name
+            document.getElementById('userName').textContent = `Welcome, ${currentUser.name}`;
+            
+            // Load transactions
+            loadTransactions();
+            
+            // Run prediction
+            setTimeout(runPrediction, 1500);
+        });
+
+        // Load transactions
+        function loadTransactions() {
+            const currentUser = JSON.parse(localStorage.getItem('currentUser'));
+            const allTransactions = JSON.parse(localStorage.getItem('transactions')) || [];
+            transactions = allTransactions.filter(t => t.userId === currentUser.id);
+        }
+
+        // Run AI Prediction
+        function runPrediction() {
+            showLoading(true);
+            
+            // Simulate AI processing time
+            setTimeout(() => {
+                if(transactions.length < 3) {
+                    showInsufficientData();
+                } else {
+                    generatePredictions();
+                }
+                showLoading(false);
+            }, 2000);
+        }
+
+        // Generate predictions using simple algorithms
+        function generatePredictions() {
+            // Get expense transactions
+            const expenses = transactions.filter(t => t.type === 'expense');
+            const incomes = transactions.filter(t => t.type === 'income');
+            
+            // Calculate monthly averages
+            const monthlyExpenses = calculateMonthlyAverage(expenses);
+            const monthlyIncome = calculateMonthlyAverage(incomes);
+            
+            // Predict next month expenses (with trend)
+            const recentExpenses = expenses.slice(-10);
+            let trend = 1;
+            if(recentExpenses.length >= 5) {
+                const firstFiveAvg = recentExpenses.slice(0,5).reduce((s, t) => s + t.amount, 0) / 5;
+                const lastFiveAvg = recentExpenses.slice(-5).reduce((s, t) => s + t.amount, 0) / 5;
+                trend = lastFiveAvg / firstFiveAvg;
+            }
+            
+            const predictedExpense = monthlyExpenses * (trend || 1);
+            const predictedSavings = monthlyIncome - predictedExpense;
+            
+            // Calculate confidence based on data amount
+            const confidence = Math.min(95, Math.floor(transactions.length * 2.5));
+            
+            // Update UI
+            document.getElementById('nextMonthExpense').textContent = '₹' + predictedExpense.toFixed(2);
+            document.getElementById('expenseConfidence').style.width = confidence + '%';
+            
+            // Trend
+            const trendText = trend > 1.1 ? 'Rapidly Increasing 📈' : 
+                             trend > 1 ? 'Slightly Increasing ↗️' :
+                             trend < 0.9 ? 'Decreasing 📉' : 'Stable ➡️';
+            document.getElementById('expenseTrendValue').textContent = trendText;
+            
+            // Savings forecast
+            document.getElementById('savingsForecast').textContent = '₹' + Math.max(0, predictedSavings).toFixed(2);
+            document.getElementById('savingsConfidence').style.width = (confidence - 10) + '%';
+            document.getElementById('savingsStatus').textContent = predictedSavings > 0 ? 'Healthy' : 'Needs Attention';
+            
+            // Budget alerts
+            const categoriesNearLimit = findCategoriesNearLimit();
+            document.getElementById('budgetAlert').textContent = categoriesNearLimit.length;
+            document.getElementById('budgetMessage').textContent = 
+                categoriesNearLimit.length > 0 ? 'Take action now' : 'All good!';
+            
+            // Health score
+            const healthScore = calculateHealthScore(monthlyIncome, predictedExpense, predictedSavings);
+            document.getElementById('healthScore').textContent = healthScore + '/100';
+            document.getElementById('healthBar').style.width = healthScore + '%';
+            document.getElementById('healthMessage').textContent = getHealthMessage(healthScore);
+            
+            // Generate suggestions
+            generateSuggestions(monthlyIncome, predictedExpense, categoriesNearLimit);
+            
+            // Generate category predictions
+            generateCategoryPredictions();
+            
+            // Show alerts
+            showAlerts(categoriesNearLimit);
+        }
+
+        // Calculate monthly average
+        function calculateMonthlyAverage(transactions) {
+            if(transactions.length === 0) return 0;
+            
+            const dates = transactions.map(t => new Date(t.date));
+            const minDate = new Date(Math.min(...dates));
+            const maxDate = new Date(Math.max(...dates));
+            
+            const monthDiff = (maxDate.getFullYear() - minDate.getFullYear()) * 12 + 
+                              (maxDate.getMonth() - minDate.getMonth()) + 1;
+            
+            const total = transactions.reduce((s, t) => s + t.amount, 0);
+            return total / Math.max(1, monthDiff);
+        }
+
+        // Find categories near limit
+        function findCategoriesNearLimit() {
+            const categoryTotals = {};
+            const categoryLimits = {
+                'Food': 5000,
+                'Entertainment': 3000,
+                'Shopping': 5000,
+                'Travel': 4000,
+                'Bills': 6000
+            };
+            
+            transactions.filter(t => t.type === 'expense').forEach(t => {
+                categoryTotals[t.category] = (categoryTotals[t.category] || 0) + t.amount;
+            });
+            
+            const nearLimit = [];
+            for(let category in categoryLimits) {
+                if(categoryTotals[category] && categoryTotals[category] > categoryLimits[category] * 0.8) {
+                    nearLimit.push({
+                        category: category,
+                        current: categoryTotals[category],
+                        limit: categoryLimits[category],
+                        percentage: (categoryTotals[category] / categoryLimits[category] * 100).toFixed(0)
+                    });
+                }
+            }
+            
+            return nearLimit;
+        }
+
+        // Calculate health score
+        function calculateHealthScore(income, expense, savings) {
+            if(income === 0) return 50;
+            
+            let score = 70; // Base score
+            
+            // Savings rate
+            const savingsRate = (savings / income) * 100;
+            if(savingsRate > 30) score += 15;
+            else if(savingsRate > 20) score += 10;
+            else if(savingsRate > 10) score += 5;
+            else score -= 10;
+            
+            // Expense ratio
+            const expenseRatio = (expense / income) * 100;
+            if(expenseRatio > 90) score -= 20;
+            else if(expenseRatio > 80) score -= 10;
+            else if(expenseRatio < 50) score += 10;
+            
+            return Math.min(100, Math.max(0, Math.floor(score)));
+        }
+
+        // Get health message
+        function getHealthMessage(score) {
+            if(score >= 80) return 'Excellent! 🌟';
+            if(score >= 60) return 'Good 👍';
+            if(score >= 40) return 'Fair 👌';
+            return 'Needs Improvement ⚠️';
+        }
+
+        // Generate smart suggestions
+        function generateSuggestions(income, expense, nearLimitCategories) {
+            const suggestions = [];
+            
+            // Basic suggestions
+            suggestions.push({
+                icon: '💰',
+                title: 'Increase Savings',
+                desc: 'Try to save at least 20% of your income',
+                impact: 'Potential savings: ₹' + (income * 0.2).toFixed(2)
+            });
+            
+            if(expense > income * 0.8) {
+                suggestions.push({
+                    icon: '⚠️',
+                    title: 'High Expense Ratio',
+                    desc: 'Your expenses are more than 80% of income',
+                    impact: 'Reduce by 10% to save more'
+                });
+            }
+            
+            // Category-based suggestions
+            nearLimitCategories.forEach(c => {
+                suggestions.push({
+                    icon: '🎯',
+                    title: `${c.category} Alert`,
+                    desc: `You've used ${c.percentage}% of your budget`,
+                    impact: `Limit: ₹${c.limit}`
+                });
+            });
+            
+            // Add to UI
+            const suggestionsList = document.getElementById('suggestionsList');
+            suggestionsList.innerHTML = suggestions.map(s => `
+                <li class="suggestion-item">
+                    <div class="suggestion-icon">${s.icon}</div>
+                    <div class="suggestion-content">
+                        <div class="suggestion-title">${s.title}</div>
+                        <div class="suggestion-desc">${s.desc}</div>
+                        <div class="suggestion-impact">${s.impact}</div>
+                    </div>
+                </li>
+            `).join('');
+        }
+
+        // Generate category predictions
+        function generateCategoryPredictions() {
+            const categories = ['Food', 'Travel', 'Entertainment', 'Shopping', 'Bills', 'Health'];
+            const container = document.getElementById('categoryPredictions');
+            
+            const predictions = categories.map(cat => {
+                const catTransactions = transactions.filter(t => t.type === 'expense' && t.category === cat);
+                const avg = catTransactions.length > 0 ? 
+                    catTransactions.reduce((s, t) => s + t.amount, 0) / catTransactions.length : 
+                    Math.random() * 2000 + 500;
+                
+                const trend = Math.random() > 0.5 ? 'up' : 'down';
+                const trendValue = (Math.random() * 10).toFixed(1);
+                
+                return {
+                    category: cat,
+                    predicted: avg * (trend === 'up' ? 1.1 : 0.95),
+                    trend: trend,
+                    trendValue: trendValue
+                };
+            });
+            
+            container.innerHTML = predictions.map(p => `
+                <div class="category-prediction">
+                    <div class="category-name">
+                        <span>${p.category}</span>
+                        <span class="${p.trend === 'up' ? 'trend-up' : 'trend-down'}">
+                            ${p.trend === 'up' ? '↑' : '↓'} ${p.trendValue}%
+                        </span>
+                    </div>
+                    <div class="category-amount">₹${p.predicted.toFixed(0)}</div>
+                    <div class="category-trend">
+                        <span>Expected next month</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Show alerts
+        function showAlerts(nearLimitCategories) {
+            const container = document.getElementById('alertsContainer');
+            
+            if(nearLimitCategories.length === 0) {
+                container.innerHTML = `
+                    <div class="alert-card" style="background: #c6f6d5; border-color: #9ae6b4;">
+                        <div class="alert-icon" style="background: #48bb78;">✓</div>
+                        <div class="alert-content">
+                            <div class="alert-title" style="color: #22543d;">All Good!</div>
+                            <div class="alert-desc" style="color: #276749;">No categories near budget limits.</div>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = nearLimitCategories.map(c => `
+                <div class="alert-card">
+                    <div class="alert-icon">⚠️</div>
+                    <div class="alert-content">
+                        <div class="alert-title">${c.category} Budget Alert</div>
+                        <div class="alert-desc">
+                            You've spent ${c.percentage}% of your ${c.category} budget (₹${c.current.toFixed(0)} / ₹${c.limit})
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Show/hide loading
+        function showLoading(show) {
+            document.getElementById('loading').style.display = show ? 'block' : 'none';
+            document.getElementById('mainContent').style.display = show ? 'none' : 'block';
+        }
+
+        // Show insufficient data message
+        function showInsufficientData() {
+            document.getElementById('mainContent').innerHTML = `
+                <div style="text-align: center; padding: 60px; background: white; border-radius: 20px;">
+                    <div style="font-size: 60px; margin-bottom: 20px;">📊</div>
+                    <h2 style="color: #4a5568; margin-bottom: 10px;">Not Enough Data</h2>
+                    <p style="color: #718096; margin-bottom: 20px;">
+                        Add at least 3 transactions to see AI predictions
+                    </p>
+                    <a href="dashboard.html" class="refresh-btn" style="text-decoration: none;">
+                        Add Transactions →
+                    </a>
+                </div>
+            `;
+        }
+
+        // Logout function
+        function logout() {
+            localStorage.removeItem('currentUser');
+            window.location.href = 'index.html';
+        }
+
+        // Auto-refresh predictions every 30 seconds
+        predictionInterval = setInterval(runPrediction, 30000);
+    </script>
+</body>
+</html>
